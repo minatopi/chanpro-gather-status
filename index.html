@@ -1,0 +1,67 @@
+
+<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>サービス稼働状況</title><style>
+*{box-sizing:border-box}body{margin:0;background:#f3f5f9;color:#172033;font:14px/1.6 -apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif}main{max-width:900px;margin:auto;padding:25px 16px 60px}.head{display:flex;align-items:center;gap:12px;margin-bottom:22px}.logo{background:#315cff;color:white;border-radius:12px;width:42px;height:42px;display:grid;place-items:center;font-weight:900;font-size:20px}h1{font-size:20px;margin:0}h2{font-size:16px;margin:0 0 12px}.muted{color:#7b8495;font-size:12px}.card{background:white;border:1px solid #e5e9f0;border-radius:15px;padding:19px;margin-bottom:15px}.hero{text-align:center;padding:28px 16px;background:#e7f7ed;border:1px solid #bde8cc;border-radius:16px;margin-bottom:16px}.hero .big{font-size:25px;font-weight:800;color:#148448}.hero p{margin:5px 0 0;color:#527361}.hero.bad{background:#fdebed;border-color:#f5c2c8}.hero.bad .big{color:#cf263b}.hero.warn{background:#fff5df;border-color:#f4dda5}.hero.warn .big{color:#a76a00}.hero.info{background:#eaf0ff;border-color:#cad8ff}.hero.info .big{color:#315cff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:11px}.item{border:1px solid #e7eaf0;border-radius:12px;padding:14px}.itemtop{display:flex;justify-content:space-between;align-items:center;gap:8px}.item strong{font-size:14px}.status{display:inline-block;padding:3px 10px;border-radius:30px;font-size:11px;font-weight:800;white-space:nowrap;background:#e8f7ee;color:#138449}.停止,.不具合{background:#fdebed;color:#ce263a}.メンテナンス{background:#fff3d9;color:#a66a00}.調査中{background:#eaf0ff;color:#315cff}.復旧{background:#e8f7ee;color:#138449}.item p{font-size:12px;color:#727d90;margin:8px 0 0;white-space:pre-wrap}.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}select,button{font:inherit;border:1px solid #dce1e9;border-radius:9px;background:white;padding:9px 12px;color:#172033}button{background:#315cff;color:white;border:0;font-weight:700;cursor:pointer}button:disabled{opacity:.5}.ev{display:grid;grid-template-columns:145px 1fr;gap:10px;padding:12px 0;border-top:1px solid #edf0f4}.ev:first-child{border:0}.ev p{margin:4px 0 0;color:#647084;font-size:13px;white-space:pre-wrap}.empty{text-align:center;padding:25px;color:#8790a0}.foot{text-align:center;color:#929aaa;font-size:11px;margin-top:18px}.error{background:#fdebed;color:#a32232;padding:12px;border-radius:10px;margin-bottom:15px;white-space:pre-wrap}@media(max-width:550px){.ev{grid-template-columns:1fr;gap:4px}.hero .big{font-size:21px}}
+</style></head><body><main>
+<header class="head"><div class="logo">S</div><div><h1>サービス稼働状況</h1><div class="muted">サービスの最新稼働情報をお知らせします</div></div></header>
+<section id="hero" class="hero info"><div class="big" id="headline">状況を確認しています</div><p id="detail">最新の稼働状況を取得しています...</p></section>
+<div class="card"><div class="bar"><h2>機能別ステータス</h2><span class="muted" id="updated">取得中...</span></div><div class="grid" id="features"><div class="empty">ログを取得しています...</div></div></div>
+<div class="card"><div class="bar"><h2>お知らせ・稼働履歴</h2><select id="days"><option value="1">直近1日</option><option value="7">直近7日</option><option value="30" selected>直近30日</option><option value="90">直近90日</option></select></div><div class="bar"><select id="feature"><option value="">すべての機能</option></select><select id="status"><option value="">すべての状態</option><option>停止</option><option>復旧</option><option>不具合</option><option>調査中</option><option>メンテナンス</option></select></div><div class="muted" id="count"></div><div id="history"><div class="empty">履歴を取得しています...</div></div></div>
+<div id="error"></div><div class="foot">最終更新時刻は自動更新されます。サービス状況はAxiomの記録に基づきます。</div>
+</main><script>
+const AXIOM={URL:"https://api.axiom.co",API_TOKEN:"xaat-f94473d7-99a5-42d1-ba3c-44ca760a2b97",DATASET:"chanpro"};
+(()=>{
+"use strict";
+const $=id=>document.getElementById(id),tones={"停止":"停止","復旧":"復旧","不具合":"不具合","調査中":"調査中","メンテナンス":"メンテナンス"};
+let events=[],timer=null,busy=false;
+const fmt=t=>t?new Date(t).toLocaleString("ja-JP"):"日時不明";
+const ago=t=>{let n=Date.now()-new Date(t).getTime();if(!Number.isFinite(n)||n<0)return"";let s=Math.floor(n/1000);return s<60?"たった今":s<3600?Math.floor(s/60)+"分前":s<86400?Math.floor(s/3600)+"時間前":Math.floor(s/86400)+"日前"};
+const node=(tag,cls,txt)=>{let e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e};
+function message(t){$("error").textContent=t;$("error").className=t?"error":""}
+function current(){
+let seen=new Set(),list=[];
+events.forEach(e=>{if(e.feature&&!seen.has(e.feature)){seen.add(e.feature);list.push(e)}});
+return list;
+}
+function render(){
+let list=current(),bad=list.filter(e=>["停止","不具合"].includes(e.status)),maint=list.filter(e=>e.status==="メンテナンス"),invest=list.filter(e=>e.status==="調査中");
+let hero=$("hero");
+hero.className="hero";
+if(bad.length){hero.classList.add("bad");$("headline").textContent=bad.length+"機能で障害・停止が発生しています";$("detail").textContent="現在、一部機能をご利用いただけません。復旧に向けて対応しています。"}
+else if(maint.length){hero.classList.add("warn");$("headline").textContent="メンテナンスを実施しています";$("detail").textContent="一部機能はメンテナンス中です。"}
+else if(invest.length){hero.classList.add("info");$("headline").textContent="一部機能を調査中です";$("detail").textContent="現在、状況を確認しています。"}
+else{$("headline").textContent=list.length?"すべて正常に稼働しています":"稼働状況を確認できません";$("detail").textContent=list.length?"現在、確認できる障害・メンテナンス情報はありません。":"機能ステータスの記録がありません。"}
+let box=$("features");box.replaceChildren();
+if(!list.length)box.append(node("div","empty","現在、表示できる機能情報はありません"));
+list.forEach(e=>{let d=node("div","item"),top=node("div","itemtop"),b=node("span","status "+(tones[e.status]||""),e.status||"不明");top.append(node("strong","",e.feature),b);d.append(top);if(e.message)d.append(node("p","",e.message));d.append(node("div","muted",ago(e._time)+" ・ "+fmt(e._time)));box.append(d)});
+let f=$("feature"),keep=f.value;f.replaceChildren(new Option("すべての機能",""));list.map(e=>e.feature).sort().forEach(x=>f.add(new Option(x,x)));f.value=keep;history();
+$("updated").textContent="更新 "+new Date().toLocaleTimeString("ja-JP");
+}
+function history(){
+let f=$("feature").value,s=$("status").value,l=events.filter(e=>(!f||e.feature===f)&&(!s||e.status===s));
+$("count").textContent=l.length+"件の記録";let box=$("history");box.replaceChildren();
+if(!l.length)box.append(node("div","empty","該当する履歴はありません"));
+l.forEach(e=>{let d=node("div","ev"),left=node("div","muted",fmt(e._time)),right=node("div",""),top=node("div","itemtop");top.append(node("strong","",e.feature||"機能名不明"),node("span","status "+(tones[e.status]||""),e.status||"不明"));right.append(top);if(e.message)right.append(node("p","",e.message));d.append(left,right);box.append(d)});
+}
+async function load(){
+if(busy)return;busy=true;
+try{
+message("");
+if(!/^xaat-[\x21-\x7E]+$/.test(AXIOM.API_TOKEN))throw Error("API_TOKENを設定してください");
+if(!/^[\w-]+$/.test(AXIOM.DATASET))throw Error("DATASET名が不正です");
+let days=Number($("days").value),apl="['"+AXIOM.DATASET+"'] | where _time > ago("+days+"d) | where type == \"feature_status\" | sort by _time desc | take 300";
+let r=await fetch(AXIOM.URL.replace(/\/+$/,"")+"/v1/datasets/_apl?format=legacy",{method:"POST",headers:{"Authorization":"Bearer "+AXIOM.API_TOKEN,"Content-Type":"application/json"},body:JSON.stringify({apl})});
+let j=await r.json().catch(()=>({}));
+if(!r.ok)throw Error(j.message||"HTTP "+r.status);
+if(Array.isArray(j.matches))events=j.matches.map(m=>Object.assign({_time:m._time},m.data||{}));
+else{let t=j.tables&&j.tables[0];events=[];if(t){let n=(t.columns[0]||[]).length;for(let i=0;i<n;i++){let o={};t.fields.forEach((f,c)=>o[f.name]=t.columns[c][i]);events.push(o)}}}
+render();
+}catch(e){message("最新状況を取得できませんでした: "+e.message);$("headline").textContent="状況を取得できません";$("detail").textContent="時間をおいて再度ご確認ください。"}
+finally{busy=false}
+}
+function schedule(){clearInterval(timer);timer=setInterval(load,30000)}
+$("days").addEventListener("change",load);
+$("feature").addEventListener("change",history);
+$("status").addEventListener("change",history);
+load();schedule();
+})();
+</script></body></html>
