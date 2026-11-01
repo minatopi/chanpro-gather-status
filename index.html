@@ -1,67 +1,243 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101a35">
+<meta name="description" content="ChanPro各サービスの稼働状況、障害情報、メンテナンス情報をお知らせします。">
+<title>サービス稼働状況 | ChanPro</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--navy:#101a35;--blue:#4169f5;--green:#159b62;--red:#dc4354;--amber:#c18419;--ink:#17233c;--muted:#71809a;--line:#e6ebf3;--bg:#f4f7fc;--white:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif}
+a{color:inherit}
+.topbar{background:linear-gradient(120deg,#101a35,#1b2d57);color:#fff;padding:17px 20px}
+.top-inner{max-width:1080px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:15px}
+.brand{display:flex;align-items:center;gap:11px;font-size:19px;font-weight:850;letter-spacing:.2px}
+.brand-mark{width:37px;height:37px;border-radius:11px;background:linear-gradient(145deg,#6d8bff,#3155e8);display:grid;place-items:center;font-size:18px;box-shadow:0 5px 15px #0003}
+.brand span{color:#8fa8ff}
+.top-caption{font-size:11px;color:#c2cce2;letter-spacing:1.5px}
+main{max-width:1080px;margin:auto;padding:29px 20px 55px}
+.page-intro{display:flex;justify-content:space-between;align-items:end;gap:15px;margin-bottom:21px}
+.eyebrow{font-size:11px;font-weight:800;color:var(--blue);letter-spacing:1.7px}
+h1{font-size:25px;letter-spacing:-.5px;margin:3px 0 2px}
+.intro-text{color:var(--muted);font-size:13px;margin:0}
+.updated{font-size:11px;color:var(--muted);text-align:right;white-space:nowrap}
+.hero{position:relative;overflow:hidden;border-radius:19px;padding:25px 27px;margin-bottom:17px;background:linear-gradient(115deg,#e8f8ef,#f4fcf7);border:1px solid #c8ead5;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.hero:after{content:"";position:absolute;width:220px;height:220px;border:35px solid #fff8;border-radius:50%;right:8%;top:-130px}
+.hero.bad{background:linear-gradient(115deg,#fff0f1,#fff8f8);border-color:#f3c9cf}
+.hero.warn{background:linear-gradient(115deg,#fff7e7,#fffcf5);border-color:#f1dfb8}
+.hero.info{background:linear-gradient(115deg,#edf2ff,#f8faff);border-color:#d5defb}
+.hero-content{position:relative;z-index:1}
+.hero-kicker{font-size:10px;font-weight:850;letter-spacing:1.5px;color:#668071}
+.hero.bad .hero-kicker{color:#a85a64}.hero.warn .hero-kicker{color:#9a762f}.hero.info .hero-kicker{color:#6277b6}
+.hero-title{font-size:25px;font-weight:850;line-height:1.35;margin:5px 0}
+.hero-desc{font-size:13px;color:#5e7180;margin:0}
+.hero.bad .hero-desc{color:#86636a}.hero.warn .hero-desc{color:#87754e}
+.hero-symbol{position:relative;z-index:1;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:#fff;color:var(--green);font-size:26px;box-shadow:0 5px 18px #1b4b2512;flex:none}
+.hero.bad .hero-symbol{color:var(--red)}.hero.warn .hero-symbol{color:var(--amber)}.hero.info .hero-symbol{color:var(--blue)}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:25px}
+.pill{background:#fff;border:1px solid var(--line);border-radius:30px;padding:6px 11px;font-size:11px;color:#687791}
+.pill b{color:var(--ink);margin-right:4px}
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:10px;margin:28px 0 13px}
+h2{font-size:16px;margin:0;font-weight:850}
+.section-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.metric,.panel{background:#fff;border:1px solid var(--line);border-radius:15px;box-shadow:0 4px 16px #1b2d5708}
+.metric{padding:16px 18px}
+.metric-label{font-size:11px;color:var(--muted);font-weight:650}
+.metric-value{font-size:25px;font-weight:850;letter-spacing:-.5px;margin-top:5px}
+.metric-sub{font-size:10px;color:#9aa5b7;margin-top:1px}
+.panel{padding:18px 19px}
+.chart-wrap{height:155px;position:relative}
+.legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:10px;margin-bottom:12px}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:9px;height:9px;border-radius:3px;display:inline-block}
+.chart-note{font-size:10px;color:var(--muted);margin-top:11px}
+.feature-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.feature{border:1px solid var(--line);border-radius:13px;padding:14px 15px;background:#fff;min-width:0}
+.feature-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.feature-name{font-size:13px;font-weight:800;overflow-wrap:anywhere}
+.badge{font-size:10px;font-weight:850;padding:4px 10px;border-radius:30px;white-space:nowrap;background:#e9f7ef;color:#16804d}
+.badge.停止,.badge.不具合{background:#ffebed;color:#c83245}
+.badge.メンテナンス{background:#fff3d9;color:#9b690e}
+.badge.調査中{background:#eaf0ff;color:#3158d8}
+.feature-message{font-size:12px;color:#687791;margin:8px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.feature-time{font-size:10px;color:#9aa5b7;margin-top:7px}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.filters{display:flex;gap:8px;flex-wrap:wrap}
+select,button{font:inherit;border:1px solid #dce3ef;border-radius:9px;padding:8px 11px;background:#fff;color:var(--ink);font-size:12px}
+button{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:750;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}
+.history-count{font-size:11px;color:var(--muted);margin-bottom:5px}
+.event{display:grid;grid-template-columns:150px minmax(0,1fr);gap:13px;padding:13px 0;border-top:1px solid #edf0f5}
+.event:first-child{border-top:0}
+.event-time{font-size:11px;color:var(--muted)}
+.event-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.event-title strong{font-size:12px}
+.event-message{font-size:12px;color:#687791;margin:5px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.empty{padding:23px 10px;text-align:center;color:#929db0;font-size:12px}
+.error{display:none;background:#fff0f1;border:1px solid #f2c9ce;color:#a52d3b;padding:12px 14px;border-radius:11px;margin-top:15px;font-size:12px;white-space:pre-wrap}
+.error.show{display:block}
+.footer{border-top:1px solid var(--line);margin-top:35px;padding-top:18px;text-align:center;color:#9aa5b7;font-size:10px;line-height:2}
+@media(max-width:700px){main{padding:23px 14px 42px}.topbar{padding:13px 15px}.page-intro{align-items:flex-start;flex-direction:column}.updated{text-align:left}.hero{padding:21px 19px}.hero-title{font-size:21px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric{padding:14px}.metric-value{font-size:22px}.feature-grid{grid-template-columns:1fr}.chart-wrap{height:135px}}
+@media(max-width:430px){.grid{gap:8px}.metric{padding:12px}.metric-value{font-size:19px}.metric-label{font-size:10px}.event{grid-template-columns:1fr;gap:3px}.hero-symbol{width:44px;height:44px;font-size:21px}}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="top-inner"><div class="brand"><div class="brand-mark">C</div><div>Chan<span>Pro</span> <span style="color:#fff">STATUS</span></div></div><div class="top-caption">SERVICE STATUS PAGE</div></div></div>
+<main>
+  <div class="page-intro">
+    <div><div class="eyebrow">SYSTEM OVERVIEW</div><h1>サービス稼働状況</h1><p class="intro-text">ChanProの各サービスの稼働状況と、過去の障害・メンテナンス情報をご確認いただけます。</p></div>
+    <div class="updated" id="updated">データ取得中...</div>
+  </div>
+  <section class="hero info" id="hero"><div class="hero-content"><div class="hero-kicker">CURRENT SERVICE STATUS</div><div class="hero-title" id="headline">状況を確認しています</div><p class="hero-desc" id="detail">最新の稼働状況を取得しています...</p></div><div class="hero-symbol" id="heroSymbol">…</div></section>
+  <div class="pills"><div class="pill">最終監視 <b id="lastChecked">--</b></div><div class="pill">自動更新 <b>30秒・60秒</b></div><div class="pill">表示時刻 <b>日本標準時</b></div></div>
 
-<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>サービス稼働状況</title><style>
-*{box-sizing:border-box}body{margin:0;background:#f3f5f9;color:#172033;font:14px/1.6 -apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif}main{max-width:900px;margin:auto;padding:25px 16px 60px}.head{display:flex;align-items:center;gap:12px;margin-bottom:22px}.logo{background:#315cff;color:white;border-radius:12px;width:42px;height:42px;display:grid;place-items:center;font-weight:900;font-size:20px}h1{font-size:20px;margin:0}h2{font-size:16px;margin:0 0 12px}.muted{color:#7b8495;font-size:12px}.card{background:white;border:1px solid #e5e9f0;border-radius:15px;padding:19px;margin-bottom:15px}.hero{text-align:center;padding:28px 16px;background:#e7f7ed;border:1px solid #bde8cc;border-radius:16px;margin-bottom:16px}.hero .big{font-size:25px;font-weight:800;color:#148448}.hero p{margin:5px 0 0;color:#527361}.hero.bad{background:#fdebed;border-color:#f5c2c8}.hero.bad .big{color:#cf263b}.hero.warn{background:#fff5df;border-color:#f4dda5}.hero.warn .big{color:#a76a00}.hero.info{background:#eaf0ff;border-color:#cad8ff}.hero.info .big{color:#315cff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:11px}.item{border:1px solid #e7eaf0;border-radius:12px;padding:14px}.itemtop{display:flex;justify-content:space-between;align-items:center;gap:8px}.item strong{font-size:14px}.status{display:inline-block;padding:3px 10px;border-radius:30px;font-size:11px;font-weight:800;white-space:nowrap;background:#e8f7ee;color:#138449}.停止,.不具合{background:#fdebed;color:#ce263a}.メンテナンス{background:#fff3d9;color:#a66a00}.調査中{background:#eaf0ff;color:#315cff}.復旧{background:#e8f7ee;color:#138449}.item p{font-size:12px;color:#727d90;margin:8px 0 0;white-space:pre-wrap}.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}select,button{font:inherit;border:1px solid #dce1e9;border-radius:9px;background:white;padding:9px 12px;color:#172033}button{background:#315cff;color:white;border:0;font-weight:700;cursor:pointer}button:disabled{opacity:.5}.ev{display:grid;grid-template-columns:145px 1fr;gap:10px;padding:12px 0;border-top:1px solid #edf0f4}.ev:first-child{border:0}.ev p{margin:4px 0 0;color:#647084;font-size:13px;white-space:pre-wrap}.empty{text-align:center;padding:25px;color:#8790a0}.foot{text-align:center;color:#929aaa;font-size:11px;margin-top:18px}.error{background:#fdebed;color:#a32232;padding:12px;border-radius:10px;margin-bottom:15px;white-space:pre-wrap}@media(max-width:550px){.ev{grid-template-columns:1fr;gap:4px}.hero .big{font-size:21px}}
-</style></head><body><main>
-<header class="head"><div class="logo">S</div><div><h1>サービス稼働状況</h1><div class="muted">サービスの最新稼働情報をお知らせします</div></div></header>
-<section id="hero" class="hero info"><div class="big" id="headline">状況を確認しています</div><p id="detail">最新の稼働状況を取得しています...</p></section>
-<div class="card"><div class="bar"><h2>機能別ステータス</h2><span class="muted" id="updated">取得中...</span></div><div class="grid" id="features"><div class="empty">ログを取得しています...</div></div></div>
-<div class="card"><div class="bar"><h2>お知らせ・稼働履歴</h2><select id="days"><option value="1">直近1日</option><option value="7">直近7日</option><option value="30" selected>直近30日</option><option value="90">直近90日</option></select></div><div class="bar"><select id="feature"><option value="">すべての機能</option></select><select id="status"><option value="">すべての状態</option><option>停止</option><option>復旧</option><option>不具合</option><option>調査中</option><option>メンテナンス</option></select></div><div class="muted" id="count"></div><div id="history"><div class="empty">履歴を取得しています...</div></div></div>
-<div id="error"></div><div class="foot">最終更新時刻は自動更新されます。サービス状況はAxiomの記録に基づきます。</div>
-</main><script>
-const AXIOM={URL:"https://api.axiom.co",API_TOKEN:"xaat-f94473d7-99a5-42d1-ba3c-44ca760a2b97",DATASET:"chanpro"};
-(()=>{
+  <div class="section-head"><div><h2>稼働状況の推移</h2><div class="section-sub">過去24時間・30分ごとの監視結果</div></div></div>
+  <section class="panel"><div class="legend"><span><i style="background:#159b62"></i>正常</span><span><i style="background:#dc4354"></i>異常</span><span><i style="background:#cbd5e1"></i>データなし</span></div><div class="chart-wrap"><canvas id="uptimeChart"></canvas></div><div class="chart-note">各時間帯に1回でも異常があった場合は赤色で表示します。</div></section>
+
+  <div class="section-head"><div><h2>応答速度の推移</h2><div class="section-sub">過去24時間・30分ごとの平均応答時間</div></div></div>
+  <section class="panel"><div class="legend"><span><i style="background:#4169f5"></i>平均応答時間</span></div><div class="chart-wrap"><canvas id="responseChart"></canvas></div><div class="chart-note">応答時間の記録がない時間帯はグラフに表示しません。</div></section>
+
+  <div class="section-head"><div><h2>機能別ステータス</h2><div class="section-sub">各機能の最新の状態</div></div></div>
+  <section class="panel"><div class="feature-grid" id="features"><div class="empty">機能情報を取得しています...</div></div></section>
+
+  <div class="section-head"><div><h2>お知らせ・稼働履歴</h2><div class="section-sub">障害、復旧、調査、メンテナンスの記録</div></div></div>
+  <section class="panel">
+    <div class="toolbar"><div class="filters"><select id="days" aria-label="表示期間"><option value="1">直近1日</option><option value="7">直近7日</option><option value="30" selected>直近30日</option><option value="90">直近90日</option></select><select id="featureFilter" aria-label="機能で絞り込み"><option value="">すべての機能</option></select><select id="statusFilter" aria-label="状態で絞り込み"><option value="">すべての状態</option><option>停止</option><option>稼働中</option><option>不具合</option><option>調査中</option><option>メンテナンス</option></select></div><button id="refresh" type="button">更新する</button></div>
+    <div class="history-count" id="count"></div><div id="history"><div class="empty">履歴を取得しています...</div></div>
+  </section>
+
+  <div class="section-head"><div><h2>監視サマリー</h2><div class="section-sub">監視システムによるチェック結果</div></div></div>
+  <div class="grid">
+    <div class="metric"><div class="metric-label">監視成功回数</div><div class="metric-value" id="success">--</div><div class="metric-sub">Successful checks</div></div>
+    <div class="metric"><div class="metric-label">監視失敗回数</div><div class="metric-value" id="failed">--</div><div class="metric-sub">Failed checks</div></div>
+    <div class="metric"><div class="metric-label">総監視回数</div><div class="metric-value" id="total">--</div><div class="metric-sub">Total checks</div></div>
+    <div class="metric"><div class="metric-label">平均応答時間</div><div class="metric-value" id="response">--</div><div class="metric-sub">Average response time</div></div>
+    <div class="metric"><div class="metric-label">最終確認結果</div><div class="metric-value" id="last">--</div><div class="metric-sub">Last check status</div></div>
+    <div class="metric"><div class="metric-label">監視成功率</div><div class="metric-value" id="rate">--</div><div class="metric-sub">Observed success rate</div></div>
+  </div>
+
+  <div class="error" id="error" role="status"></div>
+  <footer class="footer"><div><strong>ChanPro Service Status</strong></div><div>監視データに基づき自動更新しています。表示内容は監視システムの記録をもとにしています。</div><div>監視情報：30秒ごとに更新 / 稼働グラフ：60秒ごとに更新</div><div id="checked">最終データ取得：--</div></footer>
+</main>
+<script>
 "use strict";
-const $=id=>document.getElementById(id),tones={"停止":"停止","復旧":"復旧","不具合":"不具合","調査中":"調査中","メンテナンス":"メンテナンス"};
-let events=[],timer=null,busy=false;
-const fmt=t=>t?new Date(t).toLocaleString("ja-JP"):"日時不明";
-const ago=t=>{let n=Date.now()-new Date(t).getTime();if(!Number.isFinite(n)||n<0)return"";let s=Math.floor(n/1000);return s<60?"たった今":s<3600?Math.floor(s/60)+"分前":s<86400?Math.floor(s/3600)+"時間前":Math.floor(s/86400)+"日前"};
-const node=(tag,cls,txt)=>{let e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e};
-function message(t){$("error").textContent=t;$("error").className=t?"error":""}
-function current(){
-let seen=new Set(),list=[];
-events.forEach(e=>{if(e.feature&&!seen.has(e.feature)){seen.add(e.feature);list.push(e)}});
-return list;
+const METRICS_URL="https://minatopi.github.io/chanpro-gather-surveillance/metrics.json";
+const AXIOM={URL:"https://api.axiom.co",API_TOKEN:"xaat-f94473d7-99a5-42d1-ba3c-44ca760a2b97",DATASET:"chanpro"};
+const JST="Asia/Tokyo",BUCKET=30*60*1000,PERIODS=48,$=id=>document.getElementById(id);
+let uptimeChart=null,responseChart=null,featureLogs=[],metricsHistory=[],busy=false,metricsServerUp=null;
+const number=n=>Number(n||0).toLocaleString("ja-JP");
+const formatDate=value=>value?new Date(value).toLocaleString("ja-JP",{timeZone:JST,year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"}):"--";
+const normalizeStatus=status=>status==="復旧"?"稼働中":status;
+const statusClass=status=>["停止","不具合","調査中","メンテナンス"].includes(status)?status:"";
+function el(tag,className,text){const node=document.createElement(tag);if(className)node.className=className;if(text!==undefined&&text!==null)node.textContent=text;return node}
+function aggregate(history){
+ const now=Date.now(),end=Math.floor(now/BUCKET)*BUCKET,start=end-(PERIODS-1)*BUCKET;
+ const buckets=Array.from({length:PERIODS},(_,i)=>({time:start+i*BUCKET,success:0,failed:0,count:0,response:0,responseCount:0}));
+ history.forEach(item=>{const t=new Date(item.timestamp).getTime();if(!Number.isFinite(t)||t<start||t>=end+BUCKET)return;const b=buckets[Math.floor((t-start)/BUCKET)];if(!b)return;b.count++;if(item.is_up)b.success++;else b.failed++;const r=Number(item.response_time_ms);if(item.response_time_ms!=null&&Number.isFinite(r)&&r>=0){b.response+=r;b.responseCount++}});
+ buckets.forEach(b=>b.avgResponse=b.responseCount?b.response/b.responseCount:null);return buckets;
 }
-function render(){
-let list=current(),bad=list.filter(e=>["停止","不具合"].includes(e.status)),maint=list.filter(e=>e.status==="メンテナンス"),invest=list.filter(e=>e.status==="調査中");
-let hero=$("hero");
-hero.className="hero";
-if(bad.length){hero.classList.add("bad");$("headline").textContent=bad.length+"機能で障害・停止が発生しています";$("detail").textContent="現在、一部機能をご利用いただけません。復旧に向けて対応しています。"}
-else if(maint.length){hero.classList.add("warn");$("headline").textContent="メンテナンスを実施しています";$("detail").textContent="一部機能はメンテナンス中です。"}
-else if(invest.length){hero.classList.add("info");$("headline").textContent="一部機能を調査中です";$("detail").textContent="現在、状況を確認しています。"}
-else{$("headline").textContent=list.length?"すべて正常に稼働しています":"稼働状況を確認できません";$("detail").textContent=list.length?"現在、確認できる障害・メンテナンス情報はありません。":"機能ステータスの記録がありません。"}
-let box=$("features");box.replaceChildren();
-if(!list.length)box.append(node("div","empty","現在、表示できる機能情報はありません"));
-list.forEach(e=>{let d=node("div","item"),top=node("div","itemtop"),b=node("span","status "+(tones[e.status]||""),e.status||"不明");top.append(node("strong","",e.feature),b);d.append(top);if(e.message)d.append(node("p","",e.message));d.append(node("div","muted",ago(e._time)+" ・ "+fmt(e._time)));box.append(d)});
-let f=$("feature"),keep=f.value;f.replaceChildren(new Option("すべての機能",""));list.map(e=>e.feature).sort().forEach(x=>f.add(new Option(x,x)));f.value=keep;history();
-$("updated").textContent="更新 "+new Date().toLocaleTimeString("ja-JP");
+function chartLabels(data){return data.map(b=>new Date(b.time).toLocaleString("ja-JP",{timeZone:JST,month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}))}
+function renderCharts(history){
+ if(typeof Chart==="undefined")return;
+ const data=aggregate(history),labels=chartLabels(data),colors=data.map(b=>!b.count?"#cbd5e1":b.failed>0?"#dc4354":"#159b62"),values=data.map(b=>b.count?1:0);
+ if(uptimeChart){uptimeChart.data.labels=labels;uptimeChart.data.datasets[0].data=values;uptimeChart.data.datasets[0].backgroundColor=colors;uptimeChart.update("none")}
+ else uptimeChart=new Chart($("uptimeChart"),{type:"bar",data:{labels,datasets:[{data:values,backgroundColor:colors,borderWidth:0,borderRadius:4,barPercentage:.9,categoryPercentage:.95}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const b=data[c.dataIndex];return !b.count?"データなし":`正常 ${b.success}回 / 異常 ${b.failed}回`}}}},scales:{x:{grid:{display:false},ticks:{color:"#71809a",maxTicksLimit:12,maxRotation:0,font:{size:9}}},y:{display:false,min:0,max:1.15}}}});
+ const responseValues=data.map(b=>b.avgResponse),pointColors=data.map(b=>b.avgResponse==null?"#cbd5e1":"#4169f5");
+ if(responseChart){responseChart.data.labels=labels;responseChart.data.datasets[0].data=responseValues;responseChart.data.datasets[0].pointBackgroundColor=pointColors;responseChart.data.datasets[0].pointBorderColor=pointColors;responseChart.update("none")}
+ else responseChart=new Chart($("responseChart"),{type:"line",data:{labels,datasets:[{label:"平均応答時間",data:responseValues,borderColor:"#4169f5",backgroundColor:"rgba(65,105,245,.09)",pointBackgroundColor:pointColors,pointBorderColor:pointColors,pointRadius:3,pointHoverRadius:5,borderWidth:2,tension:.3,fill:true,spanGaps:false}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw==null?"データなし":`平均応答時間: ${Math.round(c.raw).toLocaleString("ja-JP")} ms`}}},scales:{x:{grid:{display:false},ticks:{color:"#71809a",maxTicksLimit:12,maxRotation:0,font:{size:9}}},y:{beginAtZero:true,ticks:{color:"#71809a",callback:v=>v+" ms"},grid:{color:"#edf0f5"}}}}});
 }
-function history(){
-let f=$("feature").value,s=$("status").value,l=events.filter(e=>(!f||e.feature===f)&&(!s||e.status===s));
-$("count").textContent=l.length+"件の記録";let box=$("history");box.replaceChildren();
-if(!l.length)box.append(node("div","empty","該当する履歴はありません"));
-l.forEach(e=>{let d=node("div","ev"),left=node("div","muted",fmt(e._time)),right=node("div",""),top=node("div","itemtop");top.append(node("strong","",e.feature||"機能名不明"),node("span","status "+(tones[e.status]||""),e.status||"不明"));right.append(top);if(e.message)right.append(node("p","",e.message));d.append(left,right);box.append(d)});
+function renderMetrics(json){
+ const data=json["chanpro-gather"];if(!data||!data.stats)throw Error("監視データの形式が正しくありません");
+ const s=data.stats,h=Array.isArray(data.history)?data.history:[],up=s.last_status==="UP",total=Number(s.total_checks||0),success=Number(s.success_checks||0),failed=Number(s.failed_checks||0),rate=total?success/total*100:0;
+ metricsServerUp=up;
+ $("success").textContent=number(success);$("failed").textContent=number(failed);$("total").textContent=number(total);
+ $("response").textContent=s.avg_response_time_ms!=null?number(Math.round(s.avg_response_time_ms))+" ms":"--";
+ $("last").textContent=up?"UP":"DOWN";$("rate").textContent=rate.toFixed(1)+"%";
+ $("lastChecked").textContent=formatDate(s.last_checked);
+ updateHeroFromFeatures();
+ metricsHistory=h;renderCharts(h);
 }
-async function load(){
-if(busy)return;busy=true;
-try{
-message("");
-if(!/^xaat-[\x21-\x7E]+$/.test(AXIOM.API_TOKEN))throw Error("API_TOKENを設定してください");
-if(!/^[\w-]+$/.test(AXIOM.DATASET))throw Error("DATASET名が不正です");
-let days=Number($("days").value),apl="['"+AXIOM.DATASET+"'] | where _time > ago("+days+"d) | where type == \"feature_status\" | sort by _time desc | take 300";
-let r=await fetch(AXIOM.URL.replace(/\/+$/,"")+"/v1/datasets/_apl?format=legacy",{method:"POST",headers:{"Authorization":"Bearer "+AXIOM.API_TOKEN,"Content-Type":"application/json"},body:JSON.stringify({apl})});
-let j=await r.json().catch(()=>({}));
-if(!r.ok)throw Error(j.message||"HTTP "+r.status);
-if(Array.isArray(j.matches))events=j.matches.map(m=>Object.assign({_time:m._time},m.data||{}));
-else{let t=j.tables&&j.tables[0];events=[];if(t){let n=(t.columns[0]||[]).length;for(let i=0;i<n;i++){let o={};t.fields.forEach((f,c)=>o[f.name]=t.columns[c][i]);events.push(o)}}}
-render();
-}catch(e){message("最新状況を取得できませんでした: "+e.message);$("headline").textContent="状況を取得できません";$("detail").textContent="時間をおいて再度ご確認ください。"}
-finally{busy=false}
+function getLatestFeatures(){
+ const latest=new Map();
+ featureLogs.forEach(item=>{if(!item.feature)return;const old=latest.get(item.feature),time=new Date(item._time).getTime();if(!old||time>new Date(old._time).getTime())latest.set(item.feature,item)});
+ return [...latest.values()].sort((a,b)=>String(a.feature).localeCompare(String(b.feature),"ja"));
 }
-function schedule(){clearInterval(timer);timer=setInterval(load,30000)}
-$("days").addEventListener("change",load);
-$("feature").addEventListener("change",history);
-$("status").addEventListener("change",history);
-load();schedule();
-})();
-</script></body></html>
+function updateHeroFromFeatures(){
+ const latest=getLatestFeatures();
+ const issues=latest.filter(x=>["停止","不具合","メンテナンス","調査中"].includes(normalizeStatus(x.status)));
+ const hero=$("hero");hero.classList.remove("bad","warn","info");
+ if(metricsServerUp===false){
+  hero.classList.add("bad");$("headline").textContent="ChanProのサーバーで異常を検知しています";$("detail").textContent="現在、サーバーの稼働に問題が発生しています。復旧状況を確認しています。";$("heroSymbol").textContent="!";
+  return;
+ }
+ if(issues.length){
+  const first=issues[0],name=first.feature||"一部機能",status=normalizeStatus(first.status);
+  if(status==="停止"||status==="不具合"){
+   hero.classList.add("bad");$("headline").textContent=name+"が現在"+status+"です";$("detail").textContent=first.message||"現在この機能に問題が発生しています。復旧に向けて対応しています。";$("heroSymbol").textContent="!";
+  }else if(status==="メンテナンス"){
+   hero.classList.add("warn");$("headline").textContent=name+"が現在メンテナンス中です";$("detail").textContent=first.message||"メンテナンスを実施しています。ご不便をおかけします。";$("heroSymbol").textContent="⚙";
+  }else{
+   hero.classList.add("info");$("headline").textContent=name+"が現在調査中です";$("detail").textContent=first.message||"現在、状況を確認しています。新しい情報が入り次第お知らせします。";$("heroSymbol").textContent="…";
+  }
+  return;
+ }
+ if(latest.length||metricsServerUp===true){
+  $("headline").textContent="すべてのサービスが正常に稼働しています";$("detail").textContent="現在、確認できる障害・メンテナンス情報はありません。";$("heroSymbol").textContent="✓";
+ }
+}
+function renderFeatures(){
+ const latest=getLatestFeatures(),container=$("features");container.replaceChildren();
+ if(!latest.length){container.append(el("div","empty","現在、表示できる機能情報はありません。"));return}
+ latest.forEach(item=>{const status=normalizeStatus(item.status)||"不明",card=el("article","feature"),top=el("div","feature-top"),badge=el("span","badge "+statusClass(status),status);
+ top.append(el("div","feature-name",item.feature),badge);card.append(top);
+ if(item.message)card.append(el("p","feature-message",item.message));
+ card.append(el("div","feature-time","最終更新："+formatDate(item._time)));container.append(card)});
+ const select=$("featureFilter"),selected=select.value;select.replaceChildren(new Option("すべての機能",""));
+ [...new Set(featureLogs.map(x=>x.feature).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ja")).forEach(name=>select.add(new Option(name,name)));
+ select.value=selected;
+ updateHeroFromFeatures();
+}
+function renderHistory(){
+ const days=Number($("days").value),feature=$("featureFilter").value,status=$("statusFilter").value,cutoff=Date.now()-days*86400000;
+ const rows=featureLogs.filter(item=>{const time=new Date(item._time).getTime();return time>=cutoff&&(!feature||item.feature===feature)&&(!status||normalizeStatus(item.status)===status)}).sort((a,b)=>new Date(b._time)-new Date(a._time)).slice(0,300);
+ $("count").textContent=rows.length+"件の記録";const box=$("history");box.replaceChildren();
+ if(!rows.length){box.append(el("div","empty","該当する履歴はありません。"));return}
+ rows.forEach(item=>{const row=el("div","event"),time=el("div","event-time",formatDate(item._time)),body=el("div",""),head=el("div","event-title"),status=normalizeStatus(item.status)||"不明";
+ head.append(el("strong","",item.feature||"機能名不明"),el("span","badge "+statusClass(status),status));
+ body.append(head);if(item.message)body.append(el("p","event-message",item.message));row.append(time,body);box.append(row)});
+}
+async function fetchFeatureLogs(){
+ const days=Number($("days").value),apl="['"+AXIOM.DATASET+"'] | where _time > ago("+days+'d) | where type == "feature_status" | sort by _time desc | take 300';
+ const response=await fetch(AXIOM.URL.replace(/\/+$/,"")+"/v1/datasets/_apl?format=legacy",{method:"POST",headers:{Authorization:"Bearer "+AXIOM.API_TOKEN,"Content-Type":"application/json"},body:JSON.stringify({apl})});
+ const result=await response.json().catch(()=>({}));if(!response.ok)throw Error(result.message||"Axiom HTTP "+response.status);
+ let records=[];
+ if(Array.isArray(result.matches))records=result.matches.map(x=>Object.assign({_time:x._time},x.data||{}));
+ else{const table=result.tables&&result.tables[0];if(table){const count=(table.columns[0]||[]).length;for(let i=0;i<count;i++){const row={};table.fields.forEach((field,index)=>row[field.name]=table.columns[index][i]);records.push(row)}}}
+ featureLogs=records;renderFeatures();renderHistory();
+}
+function showError(message){$("error").textContent=message;$("error").classList.add("show")}
+function clearError(){$("error").textContent="";$("error").classList.remove("show")}
+async function updateAll(){
+ if(busy)return;busy=true;$("refresh").disabled=true;$("refresh").textContent="更新中...";
+ clearError();const errors=[];
+ const tasks=await Promise.allSettled([
+  fetch(METRICS_URL,{cache:"no-store"}).then(r=>{if(!r.ok)throw Error("監視メトリクス HTTP "+r.status);return r.json()}).then(renderMetrics),
+  fetchFeatureLogs()
+ ]);
+ tasks.forEach((result,index)=>{if(result.status==="rejected")errors.push((index===0?"稼働メトリクス: ":"機能別ステータス: ")+result.reason.message)});
+ $("updated").textContent="最終更新："+new Date().toLocaleTimeString("ja-JP",{timeZone:JST});
+ $("checked").textContent="最終データ取得："+formatDate(new Date().toISOString());
+ if(errors.length)showError("一部の情報を取得できませんでした。\n"+errors.join("\n"));
+ busy=false;$("refresh").disabled=false;$("refresh").textContent="更新する";
+}
+$("days").addEventListener("change",async()=>{try{clearError();await fetchFeatureLogs()}catch(e){showError("稼働履歴を取得できませんでした: "+e.message)}});
+$("featureFilter").addEventListener("change",renderHistory);$("statusFilter").addEventListener("change",renderHistory);
+$("refresh").addEventListener("click",updateAll);
+updateAll();setInterval(updateAll,60000);
+</script>
+</body>
+</html>
